@@ -96,6 +96,65 @@ def IsBoundedKatetov (f : D → ℝ) : Prop :=
   (∀ x, 0 ≤ f x ∧ f x ≤ 1) ∧
     ∀ x y, |f x - f y| ≤ dist x y ∧ dist x y ≤ f x + f y
 
+/-- The bounded Katetov functions, viewed as a concrete convex set. -/
+def katetovSet (D : Type*) [PseudoMetricSpace D] : Set (D → ℝ) :=
+  {f | IsBoundedKatetov f}
+
+@[simp] lemma mem_katetovSet {f : D → ℝ} :
+    f ∈ katetovSet D ↔ IsBoundedKatetov f := Iff.rfl
+
+/-- The defining Katetov inequalities are preserved by convex combinations. -/
+theorem katetovSet_convex : Convex ℝ (katetovSet D) := by
+  intro f hf g hg a b ha hb hab
+  change IsBoundedKatetov (a • f + b • g)
+  change IsBoundedKatetov f at hf
+  change IsBoundedKatetov g at hg
+  constructor
+  · intro x
+    constructor
+    · change 0 ≤ a * f x + b * g x
+      exact add_nonneg (mul_nonneg ha (hf.1 x).1) (mul_nonneg hb (hg.1 x).1)
+    · change a * f x + b * g x ≤ 1
+      calc
+        a * f x + b * g x ≤ a * 1 + b * 1 :=
+          add_le_add (mul_le_mul_of_nonneg_left (hf.1 x).2 ha)
+            (mul_le_mul_of_nonneg_left (hg.1 x).2 hb)
+        _ = 1 := by linarith
+  · intro x y
+    constructor
+    · change
+        |(a * f x + b * g x) - (a * f y + b * g y)| ≤ dist x y
+      have hfxy := (hf.2 x y).1
+      have hgxy := (hg.2 x y).1
+      rw [abs_le] at hfxy hgxy ⊢
+      constructor
+      · calc
+          -dist x y = a * (-dist x y) + b * (-dist x y) := by
+            rw [← add_mul, hab, one_mul]
+          _ ≤ a * (f x - f y) + b * (g x - g y) :=
+            add_le_add
+              (mul_le_mul_of_nonneg_left hfxy.1 ha)
+              (mul_le_mul_of_nonneg_left hgxy.1 hb)
+          _ = (a * f x + b * g x) - (a * f y + b * g y) := by ring
+      · calc
+          (a * f x + b * g x) - (a * f y + b * g y) =
+              a * (f x - f y) + b * (g x - g y) := by ring
+          _ ≤ a * dist x y + b * dist x y :=
+            add_le_add
+              (mul_le_mul_of_nonneg_left hfxy.2 ha)
+              (mul_le_mul_of_nonneg_left hgxy.2 hb)
+          _ = dist x y := by rw [← add_mul, hab, one_mul]
+    · change dist x y ≤
+        (a * f x + b * g x) + (a * f y + b * g y)
+      calc
+        dist x y = a * dist x y + b * dist x y := by
+          rw [← add_mul, hab, one_mul]
+        _ ≤ a * (f x + f y) + b * (g x + g y) :=
+          add_le_add
+            (mul_le_mul_of_nonneg_left (hf.2 x y).2 ha)
+            (mul_le_mul_of_nonneg_left (hg.2 x y).2 hb)
+        _ = (a * f x + b * g x) + (a * f y + b * g y) := by ring
+
 /-- Midpoint characterization of an extreme point of the Katetov set. -/
 def MidpointExtreme (e : D → ℝ) : Prop :=
   IsBoundedKatetov e ∧
@@ -104,6 +163,71 @@ def MidpointExtreme (e : D → ℝ) : Prop :=
       IsBoundedKatetov v →
       (∀ x, (u x + v x) / 2 = e x) →
       u = e ∧ v = e
+
+/-- The elementary midpoint predicate agrees with Mathlib's standard extreme-point
+predicate because the Katetov set is convex. -/
+theorem midpointExtreme_iff_mem_extremePoints {e : D → ℝ} :
+    MidpointExtreme e ↔ e ∈ (katetovSet D).extremePoints ℝ := by
+  constructor
+  · intro he
+    rw [mem_extremePoints_iff_left]
+    refine ⟨he.1, ?_⟩
+    intro u hu v hv hopen
+    rcases hopen with ⟨a, b, ha, hb, hab, hcombo⟩
+    by_cases hhalf : (1 / 2 : ℝ) ≤ a
+    · let w : D → ℝ := (2 * a - 1) • u + (2 * b) • v
+      have hca : 0 ≤ 2 * a - 1 := by linarith
+      have hcb : 0 ≤ 2 * b := by positivity
+      have hsum : (2 * a - 1) + 2 * b = 1 := by linarith
+      have hw : IsBoundedKatetov w := by
+        exact katetovSet_convex hu hv hca hcb hsum
+      have hmid : ∀ x, (u x + w x) / 2 = e x := by
+        intro x
+        have hx := congrFun hcombo x
+        change a * u x + b * v x = e x at hx
+        change (u x + ((2 * a - 1) * u x + 2 * b * v x)) / 2 = e x
+        linarith
+      exact (he.2 u w hu hw hmid).1
+    · have hbhalf : (1 / 2 : ℝ) ≤ b := by linarith
+      let w : D → ℝ := (2 * a) • u + (2 * b - 1) • v
+      have hca : 0 ≤ 2 * a := by positivity
+      have hcb : 0 ≤ 2 * b - 1 := by linarith
+      have hsum : 2 * a + (2 * b - 1) = 1 := by linarith
+      have hw : IsBoundedKatetov w := by
+        exact katetovSet_convex hu hv hca hcb hsum
+      have hmid : ∀ x, (w x + v x) / 2 = e x := by
+        intro x
+        have hx := congrFun hcombo x
+        change a * u x + b * v x = e x at hx
+        change (((2 * a) * u x + (2 * b - 1) * v x) + v x) / 2 = e x
+        linarith
+      have hve : v = e := (he.2 w v hw hv hmid).2
+      funext x
+      have hx := congrFun hcombo x
+      have hvx := congrFun hve x
+      change a * u x + b * v x = e x at hx
+      have ha0 : a ≠ 0 := ne_of_gt ha
+      have hx' : a * u x + b * e x = e x := by
+        simpa only [hvx] using hx
+      have hxe : a * e x + b * e x = e x := by
+        calc
+          a * e x + b * e x = (a + b) * e x := by ring
+          _ = e x := by rw [hab, one_mul]
+      have hae : a * u x = a * e x := by linarith
+      have hmul : a * (u x - e x) = 0 := by
+        rw [mul_sub, hae, sub_self]
+      exact sub_eq_zero.mp ((mul_eq_zero.mp hmul).resolve_left ha0)
+  · intro he
+    have heK : e ∈ katetovSet D :=
+      (extremePoints_subset (𝕜 := ℝ)) he
+    refine ⟨heK, ?_⟩
+    intro u v hu hv hmid
+    have hopen : e ∈ openSegment ℝ u v := by
+      refine ⟨1 / 2, 1 / 2, by norm_num, by norm_num, by norm_num, ?_⟩
+      funext x
+      change (1 / 2 : ℝ) * u x + (1 / 2 : ℝ) * v x = e x
+      linarith [hmid x]
+    exact (mem_extremePoints.mp he).2 u hu v hv hopen
 
 /-- The exact rational finite one-point extension property used for
 `ℚU₁`.  A finite family is represented by `Fin n`; repetitions are harmless. -/
@@ -603,6 +727,81 @@ theorem rational_urysohn_core_obstruction
       dist₁₂ := hyz
       dist₂₀ := hzx }
   exact urysohn_extreme_midpoint_obstruction A hdiam hext
+
+/-! ## Standard extreme points and the two-atomic obstruction -/
+
+/-- Two different unordered pairs of standard extreme points with the same
+equal-weight barycenter. -/
+def HasNonuniqueExtremePointMidpoint : Prop :=
+  ∃ f g one half : D → ℝ,
+    f ∈ (katetovSet D).extremePoints ℝ ∧
+      g ∈ (katetovSet D).extremePoints ℝ ∧
+      one ∈ (katetovSet D).extremePoints ℝ ∧
+      half ∈ (katetovSet D).extremePoints ℝ ∧
+      ({f, g} : Set (D → ℝ)) ≠ {one, half} ∧
+      ∀ x, (f x + g x) / 2 = (one x + half x) / 2
+
+/-- The internal midpoint obstruction is exactly an obstruction formulated with
+Mathlib's standard extreme points. -/
+theorem hasNonuniqueExtremeMidpoint_iff_standard :
+    HasNonuniqueExtremeMidpoint (D := D) ↔
+      HasNonuniqueExtremePointMidpoint (D := D) := by
+  constructor
+  · rintro ⟨f, g, one, half, hf, hg, hone, hhalf, hpairs, hmid⟩
+    exact ⟨f, g, one, half,
+      midpointExtreme_iff_mem_extremePoints.mp hf,
+      midpointExtreme_iff_mem_extremePoints.mp hg,
+      midpointExtreme_iff_mem_extremePoints.mp hone,
+      midpointExtreme_iff_mem_extremePoints.mp hhalf,
+      hpairs, hmid⟩
+  · rintro ⟨f, g, one, half, hf, hg, hone, hhalf, hpairs, hmid⟩
+    exact ⟨f, g, one, half,
+      midpointExtreme_iff_mem_extremePoints.mpr hf,
+      midpointExtreme_iff_mem_extremePoints.mpr hg,
+      midpointExtreme_iff_mem_extremePoints.mpr hone,
+      midpointExtreme_iff_mem_extremePoints.mpr hhalf,
+      hpairs, hmid⟩
+
+/-- The equal-weight two-atomic uniqueness consequence needed from Choquet
+uniqueness, stated entirely with standard extreme points. -/
+def HasUniqueExtremeMidpointRepresentation : Prop :=
+  ∀ f g h k : D → ℝ,
+    f ∈ (katetovSet D).extremePoints ℝ →
+    g ∈ (katetovSet D).extremePoints ℝ →
+    h ∈ (katetovSet D).extremePoints ℝ →
+    k ∈ (katetovSet D).extremePoints ℝ →
+    (∀ x, (f x + g x) / 2 = (h x + k x) / 2) →
+    ({f, g} : Set (D → ℝ)) = {h, k}
+
+/-- A nonunique standard-extreme midpoint representation refutes the
+corresponding two-atomic uniqueness property. -/
+theorem nonuniqueExtremePointMidpoint_not_uniqueRepresentation
+    (h : HasNonuniqueExtremePointMidpoint (D := D)) :
+    ¬ HasUniqueExtremeMidpointRepresentation (D := D) := by
+  intro hUnique
+  rcases h with ⟨f, g, one, half, hf, hg, hone, hhalf, hpairs, hmid⟩
+  exact hpairs (hUnique f g one half hf hg hone hhalf hmid)
+
+/-- The Urysohn construction gives two different equal-weight two-atomic
+representations supported on standard extreme points. -/
+theorem urysohn_extremePoint_midpoint_obstruction
+    (A : EquilateralTriple D)
+    (hdiam : ∀ x y : D, dist x y ≤ 1)
+    (hext : RationalOnePointExtension D) :
+    HasNonuniqueExtremePointMidpoint (D := D) := by
+  exact hasNonuniqueExtremeMidpoint_iff_standard.mp
+    (urysohn_extreme_midpoint_obstruction A hdiam hext)
+
+/-- Starting from one point, rational finite extension already refutes
+equal-weight two-atomic uniqueness on the standard extreme boundary. -/
+theorem rational_urysohn_not_uniqueExtremeMidpointRepresentation
+    (x₀ : D)
+    (hdiam : ∀ x y : D, dist x y ≤ 1)
+    (hext : RationalOnePointExtension D) :
+    ¬ HasUniqueExtremeMidpointRepresentation (D := D) := by
+  apply nonuniqueExtremePointMidpoint_not_uniqueRepresentation
+  exact hasNonuniqueExtremeMidpoint_iff_standard.mp
+    (rational_urysohn_core_obstruction x₀ hdiam hext)
 
 end Katetov
 
