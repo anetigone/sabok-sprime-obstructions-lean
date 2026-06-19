@@ -55,10 +55,41 @@ For a pseudometric space satisfying a diameter-one bound and an exact rational f
 - two genuinely different extreme midpoint representations;
 - an abstract Urysohn-style core obstruction derived from the extension property.
 
-The main verified endpoint is:
+### The convex extreme-point bridge
+
+The Katětov compactum is now available as a named convex set, and the custom
+`MidpointExtreme` predicate is bridged to Mathlib's standard notion:
+
+- the concrete convex set
+  \[
+  \mathrm{katetovSet}(D)=\{f:\ D\to\mathbb R\mid f\text{ is a bounded Katětov function}\};
+  \]
+- a proof that `katetovSet` is convex;
+- the equivalence
+  \[
+  \mathrm{MidpointExtreme}(e)\ \Longleftrightarrow\ e\in\mathrm{extremePoints}(\mathrm{katetovSet}(D)),
+  \]
+  i.e. the midpoint characterization agrees with Mathlib's
+  `Set.extremePoints` because the set is convex.
+
+### Two-atomic non-uniqueness on the standard extreme boundary
+
+The non-uniqueness obstruction is reformulated entirely with standard extreme
+points and packaged as a refutation of equal-weight two-atomic uniqueness:
+
+- two genuinely different unordered pairs of standard extreme points sharing the
+  same equal-weight barycenter;
+- an equivalence between the internal midpoint obstruction and the
+  standard-extreme-point formulation;
+- the Urysohn construction gives two distinct equal-weight two-atomic
+  representations on the standard extreme boundary;
+- the resulting closed witness that equal-weight two-atomic uniqueness fails.
+
+The main verified endpoints are:
 
 ```lean
 theorem rational_urysohn_core_obstruction
+theorem rational_urysohn_not_uniqueExtremeMidpointRepresentation
 ```
 
 ## Not yet completed
@@ -71,14 +102,13 @@ The following parts are planned but are not currently claimed as verified:
 - the sharp finite threshold:
   - all spaces with at most three points give simplices;
   - counterexamples exist in every finite cardinality at least four;
-- convexity, closedness, compactness, and metrizability of the Katětov compactum;
+- closedness, compactness, and metrizability of the Katětov compactum;
 - finite rational Katětov approximation and density of distance profiles;
 - the identification
   \[
   S'_D(\mathbb U_1)=K(D);
   \]
 - instantiation with the rational Urysohn sphere and its completion;
-- the bridge from midpoint extremality to the standard extreme-point definition;
 - probability measures and barycentric representations;
 - the final conclusions that \(S'(\mathbb U_1)\) is not a Choquet simplex and is not the Poulsen simplex.
 
