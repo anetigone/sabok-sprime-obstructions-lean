@@ -4,17 +4,26 @@ A work-in-progress Lean 4 formalization of the algebraic and metric core of the 
 
 > *Finite and Urysohn obstructions to Sabok's S-prime simplex questions*
 
-## Status
+## Verified baseline
 
-The current source file has been checked successfully by the real Lean checker.
+The progress reported here is based only on:
+
+```text
+LeanWorkspace/SabokSPrime.lean
+```
+
+This file was checked successfully by the real Lean checker on 2026-06-19.
 
 - Lean: `v4.30.0`
 - Mathlib: `v4.30.0`
+- Checker result: 0 errors, 2 non-blocking linter warnings
 - No `sorry`
 - No `admit`
 - No project-defined axioms
 
-This repository currently formalizes the verified core obstruction arguments. It is **not yet a complete machine-checked formalization of the paper’s final statements about \(S'(X)\), Choquet simplices, or the Poulsen simplex**.
+The current development formalizes the verified core obstruction arguments. It
+is **not yet a complete machine-checked formalization of the paper’s final
+statements about \(S'(X)\), Choquet simplices, or the Poulsen simplex**.
 
 ## What is verified
 
@@ -57,7 +66,7 @@ For a pseudometric space satisfying a diameter-one bound and an exact rational f
 
 ### The convex extreme-point bridge
 
-The Katětov compactum is now available as a named convex set, and the custom
+The bounded Katětov functions are now available as a named set, and the custom
 `MidpointExtreme` predicate is bridged to Mathlib's standard notion:
 
 - the concrete convex set
@@ -72,18 +81,22 @@ The Katětov compactum is now available as a named convex set, and the custom
   i.e. the midpoint characterization agrees with Mathlib's
   `Set.extremePoints` because the set is convex.
 
-### Two-atomic non-uniqueness on the standard extreme boundary
+### Two-point non-uniqueness on the standard extreme boundary
 
 The non-uniqueness obstruction is reformulated entirely with standard extreme
-points and packaged as a refutation of equal-weight two-atomic uniqueness:
+points and packaged as a refutation of equal-weight two-point uniqueness:
 
 - two genuinely different unordered pairs of standard extreme points sharing the
   same equal-weight barycenter;
 - an equivalence between the internal midpoint obstruction and the
   standard-extreme-point formulation;
-- the Urysohn construction gives two distinct equal-weight two-atomic
+- the Urysohn construction gives two distinct equal-weight two-point
   representations on the standard extreme boundary;
-- the resulting closed witness that equal-weight two-atomic uniqueness fails.
+- a formal conclusion that equal-weight two-point uniqueness fails.
+
+This is the finite-support precursor to the paper's measure-theoretic statement;
+probability measures and their barycenters are not yet represented with
+Mathlib's measure API.
 
 The main verified endpoints are:
 
@@ -112,7 +125,7 @@ The following parts are planned but are not currently claimed as verified:
 - probability measures and barycentric representations;
 - the final conclusions that \(S'(\mathbb U_1)\) is not a Choquet simplex and is not the Poulsen simplex.
 
-These parts are **coming soon**.
+These items are remaining work and are not part of the verified baseline.
 
 ## Verification
 
